@@ -1,0 +1,37 @@
+@page "/attendancereport"
+@using Models
+@inject IDataAccess _data
+@inject IConfiguration _config
+
+<main class="row mt-5">
+    <div class="col-md-8 mx-auto">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>NIK</th>
+                    <th>Nama</th>
+                    <th>Tanggal Absen</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var data in joinData)
+                {
+                    <tr>
+                        <td>@data.NIK</td>
+                        <td>@data.Nama</td>
+                        <td>@data.Date</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</main>
+
+@code {
+    private List<JoinData> joinData = new List<JoinData>();
+    protected override async Task OnInitializedAsync()
+    {
+        string sql = "SELECT employees.nik, employees.nama, attendance.date FROM employees JOIN attendance ON employees.nik = attendance.nik";
+        joinData = await _data.LoadData<JoinData, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+}

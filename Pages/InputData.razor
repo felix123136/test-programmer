@@ -1,0 +1,56 @@
+@page "/inputdata"
+
+@using employeedata.Models
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject NavigationManager _navigation
+
+<main class="row mt-5">
+    <div class="col-md-6 mx-auto">
+        <h3 class="text-center">Input Data</h3>
+
+        <div class="form-group mt-2">
+            <label for="employee">NIK - Nama:</label>
+            <select id="employee" class="form-control" @bind="Nik">
+                <option value="">Select Employee</option>
+                @foreach (var emp in Employees)
+                {
+                    <option value="@emp.NIK">@emp.Nama - @emp.NIK</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group mt-2">
+            <label for="date">Tanggal Absen:</label>
+            <input id="date" type="date" class="form-control" @bind="Date" format="dd-MM-yyyy" />
+        </div>
+
+        <button class="btn btn-primary mt-2" @onclick="SaveData">Save</button>
+    </div>
+</main>
+
+
+@code {
+
+    private List<Employee> Employees = new List<Employee>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Date = DateTime.Now;
+        string sql = "SELECT * FROM employees";
+        Employees = await _data.LoadData<Employee, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+
+    private string Nik { get; set; } = "";
+    private DateTime Date { get; set; }
+
+    private async Task SaveData()
+    {
+        string sql = "INSERT INTO attendance (nik, date) VALUES (@nik, @date)";
+
+        await _data.SaveData(sql, new { nik = Nik, date = Date.ToString("dd/MM/yyyy") }, _config.GetConnectionString("default"));
+        _navigation.NavigateTo("/attendancereport");
+    }
+}
+
+

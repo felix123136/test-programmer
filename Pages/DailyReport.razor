@@ -1,0 +1,69 @@
+@page "/dailyreport"
+
+@using Models
+@inject IDataAccess _data
+@inject IConfiguration _config
+
+<table class="table table-bordered mt-5">
+    <thead>
+        <tr>
+            <th>NIK</th>
+            <th>Nama</th>
+            @foreach (var date in dates)
+            {
+                <th>@date</th>
+            }
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var data in attendanceMap)
+        {
+            <tr>
+                <td>@data.Key.NIK</td>
+                <td>@data.Key.Nama</td>
+                @foreach (var date in dates)
+                {
+                    <td>
+                        @if (data.Value.Contains(date))
+                        {
+                            <span>X</span>
+                        }
+                    </td>
+                }
+                <td>@data.Value.Count()</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<JoinData> attendanceData = new List<JoinData>();
+    private HashSet<string> dates = new HashSet<string>();
+    Dictionary<Employee, List<string>> attendanceMap = new Dictionary<Employee, List<string>>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        string sql = "SELECT employees.nik, employees.nama, attendance.date FROM employees JOIN attendance ON employees.nik = attendance.nik";
+        attendanceData = await _data.LoadData<JoinData, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+
+        foreach(var data in attendanceData)
+        {
+            dates.Add(data.Date);
+            var employee = new Employee { NIK = data.NIK, Nama = data.Nama };
+            
+            if (!attendanceMap.ContainsKey(employee))
+            {
+                attendanceMap.Add(employee, new List<string> { data.Date });
+            }
+            else
+            {
+                attendanceMap[employee].Add(data.Date);
+            }
+        }
+        @* foreach(var key in attendanceMap.Keys)
+        {
+            Console.WriteLine("Key: " + key.NIK + " Value: " + string.Join(',', attendanceMap[key]));
+        } *@
+    }
+}
